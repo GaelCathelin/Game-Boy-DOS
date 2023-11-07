@@ -406,9 +406,7 @@ bool nextInstructions(CPU *cpu, const uint64_t breakAt, FILE *logFile) {
             #endif
     #ifndef TURBO_INTERRUPTS
         }
-    #endif
 
-    #ifndef TURBO_INTERRUPTS
         interrupts(cpu);
     #endif
     }

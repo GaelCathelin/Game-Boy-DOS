@@ -9,7 +9,7 @@
 static void emulate(const char *rom, const SoundDevice device, const bool bootSequence, const uint8_t frameSkip, const uint8_t hackLevel) {
     SCOPED(CPU) cpu;
 #if defined(DEBUG) || defined(TEST)
-    cpu = initCPU(rom, BOOT, hackLevel);
+    cpu = initCPU(rom, bootSequence, hackLevel);
 #else
     cpu = initCPU(rom, bootSequence, hackLevel);
 
@@ -51,36 +51,38 @@ int main(int argc, char *argv[]) {
         if (argv[i][0] != '/' && argv[i][0] != '-')
             continue;
 
-//        if (argv[i][1] == 'b') bootSequence = true;
-        if (argv[i][1] == 'h' && argv[i][2] >= '0' && argv[i][2] <= '9') {hackLevel = argv[i][2] - '0'; continue;}
-        if (argv[i][1] == 's' && argv[i][2] >= '0' && argv[i][2] <= '9') frameSkip = argv[i][2] - '0';
-        if (argv[i][1] == 'p') device = PC_SPEAKER;
-        if (argv[i][1] == 't') device = TANDY;
-        if (argv[i][1] == 'a') device = ADLIB;
-
-        if (argv[i][1] == '?' || argv[i][1] == '-' || argv[i][1] == 'h') {
-            puts("Game Boy emulator for DOS, by Gael Cathelin (C) 2023\n");
-            puts("GAMEBOY romfile [/pcspeaker | /tandy | /adlib] [/sn] [/hn]\n");
-            puts("romfile\t\tPath of the ROM to execute. Defaults to embedded Tetris game.");
-            puts("\t\tOnly no-MBC, MBC1, MBC2 and MBC5 cartridges are supported.");
-//            puts("/boot\t\tRun the DMG-01 boot sequence.");
-            puts("/pcspeaker\tUse the PC Speaker for sound.");
-            puts("/tandy\t\tUse the Tandy/PCjr 3 voice system on port C0h for sound.");
-            puts("/adlib\t\tUse the Adlib/Sound Blaster FM synth for sound (default).");
-            puts("/sn\t\tSkip n frame(s) after every displayed frame (default: 0).");
-            puts("/h0\t\tHack level 0. Slower and more accurate emulation. CPU and");
-            puts("\t\tscreen are emulated at 8 pixels granularity, required for some");
-            puts("\t\trare special effects (e.g. wobble).");
-            puts("/h1 (default)\tHack level 1. CPU and screen are emulated at scanline");
-            puts("\t\tgranularity. Might cause rare and harmless glitches.");
-            puts("/h2\t\tHack level 2. h1 with some common wait loop patterns detection");
-            puts("\t\tand replacement with more efficient emulation code. Can speed");
-            puts("\t\tup some games drastically, but can cause some glitches that");
-            puts("\t\tshould be mostly harmless.");
-            puts("/h3\t\tHack level 3. h2 with all remaining wait loop patterns skipping");
-            puts("\t\tCPU emulation until next interrupt. Glitches and crashes are");
-            puts("\t\tvery likely but if it works, it should be faster.");
-            return 0;
+        switch (argv[i][1]) {
+//            case 'b': bootSequence = true; break;
+            case 'p': device = PC_SPEAKER; break;
+            case 't': device = TANDY; break;
+            case 'a': device = ADLIB; break;
+            case 'h': if (argv[i][2] >= '0' && argv[i][2] <= '9') { hackLevel = argv[i][2] - '0'; continue; } break;
+            case 's': if (argv[i][2] >= '0' && argv[i][2] <= '9') frameSkip = argv[i][2] - '0';  break;
+            case '?': FALLTHROUGH;
+            case 'h': FALLTHROUGH;
+            case '-': puts(
+                "Game Boy emulator for DOS, by Gael Cathelin (C) 2023\n\n"
+                "GAMEBOY romfile [/pcspeaker | /tandy | /adlib] [/sn] [/hn]\n\n"
+                "romfile\t\tPath of the ROM to execute. Defaults to embedded Tetris game.\n"
+                "\t\tOnly no-MBC, MBC1, MBC2 and MBC5 cartridges are supported.\n"
+                "/boot\t\tRun the DMG-01 boot sequence.\n"
+                "/pcspeaker\tUse the PC Speaker for sound.\n"
+                "/tandy\t\tUse the Tandy/PCjr 3 voice system on port C0h for sound.\n"
+                "/adlib\t\tUse the Adlib/Sound Blaster FM synth for sound (default).\n"
+                "/sn\t\tSkip n frame(s) after every displayed frame (default: 0).\n"
+                "/h0\t\tHack level 0. Slower and more accurate emulation. CPU and\n"
+                "\t\tscreen are emulated at 8 pixels granularity, required for some\n"
+                "\t\trare special effects (e.g. wobble).\n"
+                "/h1 (default)\tHack level 1. CPU and screen are emulated at scanline\n"
+                "\t\tgranularity. Might cause rare and harmless glitches.\n"
+                "/h2\t\tHack level 2. h1 with some common wait loop patterns detection\n"
+                "\t\tand replacement with more efficient emulation code. Can speed\n"
+                "\t\tup some games drastically, but can cause some glitches that\n"
+                "\t\tshould be mostly harmless.\n"
+                "/h3\t\tHack level 3. h2 with all remaining wait loop patterns skipping\n"
+                "\t\tCPU emulation until next interrupt. Glitches and crashes are\n"
+                "\t\tvery likely but if it works, it should be faster.");
+                return 0;
         }
     }
 
