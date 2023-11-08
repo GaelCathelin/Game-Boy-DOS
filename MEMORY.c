@@ -22,11 +22,11 @@ static const struct {
     {true , 5, "MBC5+RUMBLE+BATTERY"}, {false, 0, "UNKNOWN"         }, {false, 6, "MBC6"        },
 };
 
-Memory* initMemory(const char *path, const uint8_t hackLevel) {
+Memory* initMemory(const char *path, const bool boot, const uint8_t hackLevel) {
     Memory *mem = calloc(1, sizeof(Memory));
     mem->currROMBank = 1;
-    mem->IO[0] = 0xFF;
-    memset(&mem->IO[0x4C], 0xFF, sizeof(mem->IO) - 0x4C);
+    mem->IO[0] = 0xFF; mem->IO[0x50] = boot ? 0 : 0xFF;
+    memset(&mem->IO[0x51], 0xFF, sizeof(mem->IO) - 0x51);
 
     {
         FILE *file = fopen(path, "rb");

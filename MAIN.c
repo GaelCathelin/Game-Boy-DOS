@@ -7,12 +7,9 @@
 #define LOG 0
 
 static void emulate(const char *rom, const SoundDevice device, const bool bootSequence, const uint8_t frameSkip, const uint8_t hackLevel) {
-    SCOPED(CPU) cpu;
-#if defined(DEBUG) || defined(TEST)
-    cpu = initCPU(rom, bootSequence, hackLevel);
-#else
-    cpu = initCPU(rom, bootSequence, hackLevel);
+    SCOPED(CPU) cpu = initCPU(rom, bootSequence, hackLevel);
 
+#ifndef DEBUG
     const uint8_t mbc = cpu.mem->romBanks[0][0x147];
     if ((mbc > 0x9 && mbc < 0x11) || (mbc > 0x1B && mbc < 0xFF)) {
         puts("ERROR: Cartridge not supported! RTC and Rumble are not supported.");
@@ -30,11 +27,6 @@ static void emulate(const char *rom, const SoundDevice device, const bool bootSe
         setPalette(&screen, !sound->loudness);
 
         while (!nextPixels(&screen, skip == 0)) {
-/*
-            #ifndef TURBO
-                while (AUDIO_FREQ / (4 * FPS) * screen.cycles > (SCREEN_CLKS / 4) * sound->samples);
-            #endif
-//*/
             nextInstructions(&cpu, screen.cycles, (FILE*)(LOG * (ptrdiff_t)stdout));
         }
 
@@ -52,14 +44,13 @@ int main(int argc, char *argv[]) {
             continue;
 
         switch (argv[i][1]) {
-//            case 'b': bootSequence = true; break;
+            case 'b': bootSequence = true; break;
             case 'p': device = PC_SPEAKER; break;
             case 't': device = TANDY; break;
             case 'a': device = ADLIB; break;
-            case 'h': if (argv[i][2] >= '0' && argv[i][2] <= '9') { hackLevel = argv[i][2] - '0'; continue; } break;
             case 's': if (argv[i][2] >= '0' && argv[i][2] <= '9') frameSkip = argv[i][2] - '0';  break;
+            case 'h': if (argv[i][2] >= '0' && argv[i][2] <= '9') { hackLevel = argv[i][2] - '0'; break; } FALLTHROUGH;
             case '?': FALLTHROUGH;
-            case 'h': FALLTHROUGH;
             case '-': puts(
                 "Game Boy emulator for DOS, by Gael Cathelin (C) 2023\n\n"
                 "GAMEBOY romfile [/pcspeaker | /tandy | /adlib] [/sn] [/hn]\n\n"
@@ -86,54 +77,6 @@ int main(int argc, char *argv[]) {
         }
     }
 
-#ifdef DEBUG
-//    static char logBuff[0x400]; setvbuf(stdout, logBuff, _IOFBF, sizeof(logBuff));
-
-//    emulate("../roms/tests/dmg-acid2.gb"                     , device, bootSequence, frameSkip, hackLevel);
-//    emulate("../roms/tests/cpu/cpu_instrs.gb"                , device, bootSequence, frameSkip, hackLevel);
-//    emulate("../roms/tests/cpu/instr_timing.gb"              , device, bootSequence, frameSkip, hackLevel);
-//    emulate("../roms/tests/cpu/mem_timing.gb"                , device, bootSequence, frameSkip, hackLevel);
-//    emulate("../roms/tests/cpu/interrupt_time.gb"            , device, bootSequence, frameSkip, hackLevel); // Failed
-//    emulate("../roms/tests/cpu/halt_bug.gb"                  , device, bootSequence, frameSkip, hackLevel); // Failed
-//    emulate("../roms/tests/sound/01-registers.gb"            , device, bootSequence, frameSkip, hackLevel); // Failed
-//    emulate("../roms/tests/sound/02-len ctr.gb"              , device, bootSequence, frameSkip, hackLevel); // Failed
-//    emulate("../roms/tests/sound/03-trigger.gb"              , device, bootSequence, frameSkip, hackLevel); // Failed
-//    emulate("../roms/tests/sound/04-sweep.gb"                , device, bootSequence, frameSkip, hackLevel); // Failed
-//    emulate("../roms/tests/sound/05-sweep details.gb"        , device, bootSequence, frameSkip, hackLevel); // Failed
-//    emulate("../roms/tests/sound/06-overflow on trigger.gb"  , device, bootSequence, frameSkip, hackLevel); // Failed
-//    emulate("../roms/tests/sound/07-len sweep period sync.gb", device, bootSequence, frameSkip, hackLevel); // Failed
-//    emulate("../roms/tests/sound/08-len ctr during power.gb" , device, bootSequence, frameSkip, hackLevel); // Failed
-//    emulate("../roms/tests/sound/09-wave read while on.gb"   , device, bootSequence, frameSkip, hackLevel); // Failed
-//    emulate("../roms/tests/sound/10-wave trigger while on.gb", device, bootSequence, frameSkip, hackLevel); // Failed
-//    emulate("../roms/tests/sound/11-regs after power.gb"     , device, bootSequence, frameSkip, hackLevel); // Failed
-//    emulate("../roms/tests/sound/12-wave write while on.gb"  , device, bootSequence, frameSkip, hackLevel); // Failed
-//    emulate("../roms/tests/sound/dmg_sound.gb"               , device, bootSequence, frameSkip, hackLevel); // Failed
-//    emulate("../roms/Dr Mario.gb"            , device, bootSequence, frameSkip, hackLevel);
-//    emulate("../roms/Tetris.gb"              , device, bootSequence, frameSkip, hackLevel);
-//    emulate("../roms/Super Mario Land.gb"    , device, bootSequence, frameSkip, hackLevel);
-//    emulate("../roms/Super Mario Land 2.gb"  , device, bootSequence, frameSkip, hackLevel);
-//    emulate("../roms/Wario Land.gb"          , device, bootSequence, frameSkip, hackLevel);
-    emulate("../roms/Link's Awakening.gb"    , device, bootSequence, frameSkip, hackLevel);
-//    emulate("../roms/Donkey Kong Land.gb"    , device, bootSequence, frameSkip, hackLevel);
-//    emulate("../roms/Prehistorik Man.gb"     , device, bootSequence, frameSkip, hackLevel);
-//    emulate("../roms/20y.gb"                 , device, bootSequence, frameSkip, hackLevel);
-//    emulate("../roms/oh.gb"                  , device, bootSequence, frameSkip, hackLevel);
-//    emulate("../roms/gejmbaj.gb"             , device, bootSequence, frameSkip, hackLevel);
-//    emulate("../roms/pocket.gb"              , device, bootSequence, frameSkip, hackLevel);
-//    emulate("../roms/demo3d.gb"              , device, bootSequence, frameSkip, hackLevel);
-//    emulate("../roms/Kirby's Pinball Land.gb", device, bootSequence, frameSkip, hackLevel);
-//    emulate("../roms/Wario Land 2.gb"        , device, bootSequence, frameSkip, hackLevel);
-//    emulate("../roms/tomoni.gb"              , device, bootSequence, frameSkip, hackLevel);
-//    emulate("../roms/Pokemon Jaune.gb"       , device, bootSequence, frameSkip, hackLevel);
-//    emulate("../roms/Wario Land 2.gbc"       , device, bootSequence, frameSkip, hackLevel);
-#elif defined(TEST)
-//    emulate("../roms/tests/cpu/cpu_instrs.gb"  , device, bootSequence, frameSkip, hackLevel);
-//    emulate("../roms/tests/cpu/instr_timing.gb", device, bootSequence, frameSkip, hackLevel);
-//    emulate("../roms/tests/cpu/mem_timing.gb"  , device, bootSequence, frameSkip, hackLevel);
-//    emulate("../roms/Link's Awakening.gb"      , device, bootSequence, frameSkip, hackLevel);
-#else
     emulate(argv[1], device, bootSequence, frameSkip, hackLevel);
-#endif
-
     return 0;
 }

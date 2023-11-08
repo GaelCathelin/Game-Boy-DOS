@@ -15,9 +15,4 @@
 #define VERBATIM __attribute__((optimize(0)))
 #define SWAP(a, b) {__typeof__(a) c = a; a = b; b = c;}
 
-#ifdef TEST
-    #define TURBO
-#else
-//    #define TURBO
-#endif
 #define FPS 60

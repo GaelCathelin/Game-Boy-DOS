@@ -3,7 +3,7 @@
 #include <assert.h>
 #include <string.h>
 
-#define TURBO_INTERRUPTS
+//#define TURBO_INTERRUPTS
 //#define THREADED_INTERPRETER
 //#define PROFILE_PAIRS
 
@@ -174,7 +174,7 @@ static Instruction instructions[512] = {
 #endif
 
 CPU initCPU(const char *cartridge, const bool bootSequence, const uint8_t hackLevel) {
-    CPU cpu = {.mem = initMemory(cartridge, hackLevel)};
+    CPU cpu = {.mem = initMemory(cartridge, bootSequence, hackLevel)};
     updateBanks(cpu.mem);
 
     if (!bootSequence) {
@@ -306,7 +306,7 @@ static inline void interrupts(CPU *cpu) {
 bool nextInstructions(CPU *cpu, const uint64_t breakAt, FILE *logFile) {
     UNUSED(logFile);
 
-#if defined(TURBO_INTERRUPTS) || defined(THREADED_INTERPRETER)
+#if defined(TURBO_INTERRUPTS)
     if (cpu->mem->interruptReg & cpu->mem->IO[0x0F] & 0xF) {
         interrupts(cpu);
     } else if (cpu->halted || cpu->stopped) {
@@ -315,39 +315,6 @@ bool nextInstructions(CPU *cpu, const uint64_t breakAt, FILE *logFile) {
     }
 #endif
 
-#ifdef THREADED_INTERPRETER
-    static const void* instrs[] = {
-        #define INSTRUCTION(_opcode, _mnemonic, _length, _duration, _flags, _code) &&_##_opcode,
-        #include "lr35902.inl"
-        #undef INSTRUCTION
-    };
-
-    uint16_t opcode, operand = 0;
-    decode(cpu, &opcode, &operand);
-    goto *instrs[opcode];
-
-    #define read(_address) read8(cpu->mem, _address)
-    #define write(_address, _value) write8(cpu->mem, _address, _value)
-    #define push(_value) writep(cpu->mem, cpu->SP -= 2, _value)
-    #define pop() pop16(cpu->mem, &cpu->SP)
-    #define addCycles(_value) cycles = _value;
-    #define INSTRUCTION(_opcode, _mnemonic, _length, _duration, _flags, _code) _##_opcode: { \
-        cpu->PC += _length; \
-        uint8_t cycles = 0; \
-        _code; \
-        if (_flags[2] != '-') applyFlags(cpu, _flags); \
-        incrTimers(cpu, _length + _duration + cycles); \
-        if (cpu->cycles >= breakAt) return true; \
-        decode(cpu, &opcode, &operand); \
-        goto *instrs[opcode];}
-        #include "lr35902.inl"
-    #undef INSTRUCTION
-    #undef addCycles
-    #undef pop
-    #undef push
-    #undef write
-    #undef read
-#else
     while (LIKELY(cpu->cycles < breakAt)) {
     #ifndef TURBO_INTERRUPTS
         if (UNLIKELY(cpu->halted || cpu->stopped)) {
@@ -407,10 +374,55 @@ bool nextInstructions(CPU *cpu, const uint64_t breakAt, FILE *logFile) {
     #ifndef TURBO_INTERRUPTS
         }
 
-        interrupts(cpu);
+        if (cpu->mem->interruptReg & cpu->mem->IO[0x0F] & 0xF)
+            interrupts(cpu);
     #endif
     }
 
     return true;
-#endif
 }
+
+#ifdef THREADED_INTERPRETER
+bool nextInstructionsThreaded(CPU *cpu, const uint64_t breakAt, FILE *logFile) {
+    UNUSED(logFile);
+
+    if (cpu->mem->interruptReg & cpu->mem->IO[0x0F] & 0xF) {
+        interrupts(cpu);
+    } else if (cpu->halted || cpu->stopped) {
+        incrTimers(cpu, breakAt - cpu->cycles + 1);
+        return true;
+    }
+
+    static const void* instrs[] = {
+        #define INSTRUCTION(_opcode, _mnemonic, _length, _duration, _flags, _code) &&_##_opcode,
+        #include "lr35902.inl"
+        #undef INSTRUCTION
+    };
+
+    uint16_t opcode, operand = 0;
+    decode(cpu, &opcode, &operand);
+    goto *instrs[opcode];
+
+    #define read(_address) read8(cpu->mem, _address)
+    #define write(_address, _value) write8(cpu->mem, _address, _value)
+    #define push(_value) writep(cpu->mem, cpu->SP -= 2, _value)
+    #define pop() pop16(cpu->mem, &cpu->SP)
+    #define addCycles(_value) cycles = _value;
+    #define INSTRUCTION(_opcode, _mnemonic, _length, _duration, _flags, _code) _##_opcode: { \
+        cpu->PC += _length; \
+        uint8_t cycles = 0; \
+        _code; \
+        if (_flags[2] != '-') applyFlags(cpu, _flags); \
+        incrTimers(cpu, _length + _duration + cycles); \
+        if (cpu->cycles >= breakAt) return true; \
+        decode(cpu, &opcode, &operand); \
+        goto *instrs[opcode];}
+        #include "lr35902.inl"
+    #undef INSTRUCTION
+    #undef addCycles
+    #undef pop
+    #undef push
+    #undef write
+    #undef read
+}
+#endif

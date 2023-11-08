@@ -57,7 +57,7 @@ A Makefile is provided to be used with [DJGPP 2](https://www.delorie.com/djgpp/)
 
 | | Minimum | Recommended |
 |-|---------|-------------|
-| CPU | 386SX 16MHz | 486DX4 100MHz |
+| CPU | 386SX | Pentium |
 | RAM | 4MB | 8MB |
 | Video | EGA | VGA |
 | Sound | - | Adlib/Sound Blaster |
@@ -74,7 +74,6 @@ F1 to F4: Enable sound channel 1 to 4<br>
 F5 to F8: Disable sound channel 1 to 4<br>
 F9      : Change colors<br>
 Esc     : Quit
-
 
 ______________________
 Gael Cathelin (C) 2023
