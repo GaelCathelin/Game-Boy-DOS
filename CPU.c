@@ -174,7 +174,7 @@ static Instruction instructions[512] = {
 #endif
 
 CPU initCPU(const char *cartridge, const bool bootSequence, const uint8_t hackLevel) {
-    CPU cpu = {.mem = initMemory(cartridge, bootSequence, hackLevel)};
+    CPU cpu = {.mem = initMemory(cartridge, hackLevel)};
     updateBanks(cpu.mem);
 
     if (!bootSequence) {
@@ -284,19 +284,21 @@ static inline void incrTimers(CPU *cpu, const uint8_t val) {
 }
 
 static inline void interrupts(CPU *cpu) {
-    for (uint8_t i = 0; i < 4; i++) {
-        if (cpu->mem->interruptReg & cpu->mem->IO[0x0F] & 1 << i) {
-            cpu->stopped = cpu->halted = false;
+    if (UNLIKELY(cpu->mem->interruptReg & cpu->mem->IO[0x0F] & 0xF)) {
+        for (uint8_t i = 0; i < 4; i++) {
+            if (cpu->mem->interruptReg & cpu->mem->IO[0x0F] & 1 << i) {
+                cpu->stopped = cpu->halted = false;
 
-            if (cpu->IME > 0) {
-                cpu->IME = 0;
-                cpu->mem->IO[0x0F] &= ~(1 << i);
-                writep(cpu->mem, cpu->SP -= 2, cpu->PC);
-                cpu->PC = 0x40 + i * 0x8;
-                incrTimers(cpu, 5);
+                if (cpu->IME > 0) {
+                    cpu->IME = 0;
+                    cpu->mem->IO[0x0F] &= ~(1 << i);
+                    writep(cpu->mem, cpu->SP -= 2, cpu->PC);
+                    cpu->PC = 0x40 + i * 0x8;
+                    incrTimers(cpu, 5);
+                }
+
+                break;
             }
-
-            break;
         }
     }
 
@@ -374,8 +376,7 @@ bool nextInstructions(CPU *cpu, const uint64_t breakAt, FILE *logFile) {
     #ifndef TURBO_INTERRUPTS
         }
 
-        if (cpu->mem->interruptReg & cpu->mem->IO[0x0F] & 0xF)
-            interrupts(cpu);
+        interrupts(cpu);
     #endif
     }
 

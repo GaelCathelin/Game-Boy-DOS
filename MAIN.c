@@ -53,7 +53,7 @@ int main(int argc, char *argv[]) {
             case '?': FALLTHROUGH;
             case '-': puts(
                 "Game Boy emulator for DOS, by Gael Cathelin (C) 2023\n\n"
-                "GAMEBOY romfile [/pcspeaker | /tandy | /adlib] [/sn] [/hn]\n\n"
+                "GAMEBOY romfile [/boot] [/pcspeaker | /tandy | /adlib] [/sn] [/hn]\n\n"
                 "romfile\t\tPath of the ROM to execute. Defaults to embedded Tetris game.\n"
                 "\t\tOnly no-MBC, MBC1, MBC2 and MBC5 cartridges are supported.\n"
                 "/boot\t\tRun the DMG-01 boot sequence.\n"

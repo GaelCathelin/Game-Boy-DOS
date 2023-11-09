@@ -20,5 +20,5 @@ typedef struct {
     char savePath[128];
 } Memory;
 
-Memory* initMemory(const char *path, const bool boot, const uint8_t hackLevel) WARN_UNUSED_RESULT;
+Memory* initMemory(const char *path, const uint8_t hackLevel) WARN_UNUSED_RESULT;
 void deleteMemory(Memory *mem);
