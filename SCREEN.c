@@ -3,6 +3,7 @@
 #include <pc.h>
 #include <string.h>
 #include <sys/nearptr.h>
+#include <stdio.h>
 
 #ifdef DEBUG
     #define inline __attribute__((noinline))
@@ -16,6 +17,75 @@ static inline bool setMode(const uint16_t n) {
     __dpmi_int(0x10, &regs);
     __dpmi_int(0x10, &(__dpmi_regs){.x.ax = n});
     return regs.h.al == 0x12;
+}
+
+static inline void tweakTimings() {
+/*
+    outportb(0x3D4, 0x00); printf("%X ", inportw(0x3D4));
+    outportb(0x3D4, 0x01); printf("%X ", inportw(0x3D4));
+    outportb(0x3D4, 0x02); printf("%X ", inportw(0x3D4));
+    outportb(0x3D4, 0x03); printf("%X ", inportw(0x3D4));
+    outportb(0x3D4, 0x04); printf("%X ", inportw(0x3D4));
+    outportb(0x3D4, 0x05); printf("%X\n", inportw(0x3D4));
+
+    outportb(0x3D4, 0x06); printf("%X ", inportw(0x3D4));
+    outportb(0x3D4, 0x07); printf("%X ", inportw(0x3D4));
+    outportb(0x3D4, 0x09); printf("%X ", inportw(0x3D4));
+    outportb(0x3D4, 0x10); printf("%X ", inportw(0x3D4));
+    outportb(0x3D4, 0x11); printf("%X ", inportw(0x3D4));
+    outportb(0x3D4, 0x12); printf("%X ", inportw(0x3D4));
+    outportb(0x3D4, 0x15); printf("%X ", inportw(0x3D4));
+    outportb(0x3D4, 0x16); printf("%X\n", inportw(0x3D4));
+//*/
+    // wiki.osdev.org/VGA_Hardware
+    // https://pdos.csail.mit.edu/6.828/2014/readings/hardware/vgadoc/VGAREGS.TXT
+    outportb(0x3C2, 0xE3); // 640x480 (25 MHz, negative-negative)
+/*
+    const uint16_t vTotal = 525;
+    const uint16_t vDisplayEnd = 480 - 1;
+    const uint16_t vBlankingStart = vDisplayEnd + 1;
+    const uint16_t vRetraceStart = vTotal - 36;
+    const uint16_t vRetraceEnd = vTotal - 34;
+    const uint16_t vBlankingEnd = vTotal - 1;
+/*/
+    const uint16_t vTotal = 525;
+    const uint16_t vDisplayEnd = 288 - 1;
+    const uint16_t vBlankingStart = vDisplayEnd + 0;
+    const uint16_t vRetraceStart = vTotal - 132;
+    const uint16_t vRetraceEnd = vTotal - 1;
+    const uint16_t vBlankingEnd = vTotal - 1;
+//*/
+    outportw(0x3D4, 0x11 | (vRetraceEnd & 0xF) << 8); // vertical retrace end and indices 0-7 write enable
+    outportw(0x3D4, 0x06 | ((vTotal - 2) & 0xFF) << 8); // vertical total
+    outportw(0x3D4, 0x07 | (0x3E) << 8); // overflow register
+    outportw(0x3D4, 0x09 | (0xC0) << 8); // start vertical blanking (2)
+    outportw(0x3D4, 0x10 | (vRetraceStart & 0xFF) << 8); // vertical retrace start
+    outportw(0x3D4, 0x12 | (vDisplayEnd & 0xFF) << 8); // vertical display end
+    outportw(0x3D4, 0x15 | (vBlankingStart & 0xFF) << 8); // start vertical blanking
+    outportw(0x3D4, 0x16 | (vBlankingEnd & 0xFF) << 8); // end vertical blanking
+/*
+    const uint8_t hTotal = 50;
+    const uint8_t hDisplayEnd = 40 - 1;
+    const uint8_t hBlankingStart = hDisplayEnd + 1;
+    const uint8_t hRetraceStart = hTotal - 5;
+    const uint8_t hRetraceEnd = hTotal - 1;
+    const uint8_t hBlankingEnd = hTotal - 1;
+/*/
+    const uint8_t hTotal = 50;
+    const uint8_t hDisplayEnd = 20 - 1;
+    const uint8_t hBlankingStart = hDisplayEnd + 1;
+    const uint8_t hRetraceStart = hTotal - 15;
+    const uint8_t hRetraceEnd = hTotal - 1;
+    const uint8_t hBlankingEnd = hTotal - 1;
+//*/
+    outportw(0x3D4, 0x00 | (hTotal - 5) << 8); // horizontal total
+    outportw(0x3D4, 0x01 | hDisplayEnd << 8); // horizontal display end
+    outportw(0x3D4, 0x02 | hBlankingStart << 8); // start horizontal blanking
+    outportw(0x3D4, 0x03 | 0x8000 | (hBlankingEnd & 0x1F) << 8); // end horizontal blanking
+    outportw(0x3D4, 0x04 | hRetraceStart << 8); // horizontal retrace start
+    outportw(0x3D4, 0x05 | (hRetraceEnd & 0x1F) << 8 | (hBlankingEnd & 0x20) << 2); // horizontal retrace end
+
+    outportw(0x3D4, 0x13 | 10 << 8); // scanline byte count / 2
 }
 
 static inline void setColor(const uint8_t i, const uint8_t c) {
@@ -62,11 +132,10 @@ static inline void updatePalette(Screen *screen) {
 }
 
 static inline void clear() {
-    uint8_t *pixels = (uint8_t*)0xA078A + __djgpp_conventional_base;
+    uint8_t *pixels = (uint8_t*)0xA0000 + __djgpp_conventional_base;
     outportw(0x3C4, 0x0F02); // select all planes
     outportw(0x3CE, 0x0000); // reset planes to bg palette
-    for (uint16_t y = 0; y < 144 * 40; y += 40)
-        memset(pixels + y, 0, 20);
+    memset(pixels, 0, 20 * 144);
 }
 
 void setPalette(Screen *screen, const bool originalColors) {
@@ -87,29 +156,10 @@ void setPalette(Screen *screen, const bool originalColors) {
 Screen initScreen(uint8_t *IO, const uint8_t *VRAM, const Sprite *OAM, const uint8_t pixelBatch) {
     Screen screen = {.enabled = true, .originalColors = false, .IO = IO, .VRAM = VRAM, .OAM = OAM, .currPalette = {0xFF, 0xFF, 0xFF}, .pixelBatch = pixelBatch};
 
-    if (setMode(0xD)) {
-        // Modify the vertical sync polarity bits in the Misc. Output Register to
-        // achieve square aspect ratio
-        outportb(0x3C2, 0xE3);
-
-        // Modify the vertical timing registers to reflect the increased vertical
-        // resolution, and to center the image as good as possible
-        outportw(0x3D4, 0x2C11); // turn off write protect
-        outportw(0x3D4, 0x0D06); // vertical total
-        outportw(0x3D4, 0x3E07); // overflow register
-        outportw(0x3D4, 0xEA10); // vertical retrace start
-        outportw(0x3D4, 0xAC11); // vertical retrace end AND wr.prot
-        outportw(0x3D4, 0xDF12); // vertical display enable end
-        outportw(0x3D4, 0xE715); // start vertical blanking
-        outportw(0x3D4, 0x0616); // end vertical blanking
-    }
+    if (setMode(0xD))
+        tweakTimings();
 
     __djgpp_nearptr_enable();
-
-    // Clear 64k VRAM
-    outportw(0x3C4, 0x0C02); // select plane 2 & 3
-    uint8_t *pixels = (uint8_t*)0xA0000 + __djgpp_conventional_base;
-    memset(pixels, 0xFF, 1 << 14);
 
     setPalette(&screen, true);
     updatePalette(&screen);
@@ -155,7 +205,7 @@ static inline uint8_t selectSprites(Screen *screen, const uint8_t y, const uint8
 
 static inline void drawPixels(Screen *screen, const uint8_t x, const uint8_t y, const bool windowEnabled) {
     const uint16_t tilesBase = screen->IO[0x40] & 0x10 ? 0x0 : 0x1000;
-    volatile uint8_t *pixels = (uint8_t*)0xA078A + __djgpp_conventional_base;
+    volatile uint8_t *pixels = (uint8_t*)0xA0000 + __djgpp_conventional_base;
 
     inline void draw(const uint16_t indicesBase, const uint16_t tilesBaseY, uint16_t p, uint8_t x, uint8_t nbPixels) {
         inline const uint8_t* tile(const uint8_t x) {
@@ -206,7 +256,7 @@ static inline void drawPixels(Screen *screen, const uint8_t x, const uint8_t y, 
     if (windowEnabled && countw > 0) {
         const uint8_t yw = screen->wy - 1;
         const uint16_t indicesBase = (screen->IO[0x40] & 0x40 ? 0x1C00 : 0x1800) + (yw << 2 & 0x3E0);
-        draw(indicesBase, tilesBase + (yw << 1 & 0xE), y * 320 + xw, xw + 7 - screen->IO[0x4B], countw);
+        draw(indicesBase, tilesBase + (yw << 1 & 0xE), y * 160 + xw, xw + 7 - screen->IO[0x4B], countw);
     }
 
     if (xw > 0) {
@@ -214,13 +264,13 @@ static inline void drawPixels(Screen *screen, const uint8_t x, const uint8_t y, 
         if (background) {
             const uint8_t yb = y + screen->IO[0x42];
             const uint16_t indicesBase = (screen->IO[0x40] & 0x8 ? 0x1C00 : 0x1800) + (yb << 2 & 0x3E0);
-            draw(indicesBase, tilesBase + (yb << 1 & 0xE), y * 320 + x, x + screen->IO[0x43], MIN(screen->pixelBatch, xw - x));
+            draw(indicesBase, tilesBase + (yb << 1 & 0xE), y * 160 + x, x + screen->IO[0x43], MIN(screen->pixelBatch, xw - x));
         } else {
             outportw(0x3C4, 0x0F02);
             const uint8_t count = MIN(MAX(0, (int16_t)xw - x), screen->pixelBatch);
-            memset((void*)pixels + y * 40 + (x >> 3), 0, count >> 3);
+            memset((void*)pixels + y * 20 + (x >> 3), 0, count >> 3);
             if (count & 0x7) {
-                const uint16_t p = y * 40 + ((x + count) >> 3) + 1;
+                const uint16_t p = y * 20 + ((x + count) >> 3) + 1;
                 outportw(0x3CE, 0xFF00 << (8 - (count & 0x7)) | 0x08);
                 pixels[p] ^= pixels[p];
             }
@@ -245,7 +295,7 @@ static inline void drawPixels(Screen *screen, const uint8_t x, const uint8_t y, 
             if (s.xflip) {row1 = flipBits(row1); row2 = flipBits(row2);}
             outportw(0x3CE, s.palette ? 0x0C00 : 0x0800); // reset planes to sprite palette
 
-            uint16_t p = y * 320 + s.x - 8;
+            uint16_t p = y * 160 + s.x - 8;
             const uint8_t pt = p & 0x7;
             p >>= 3;
             const uint16_t mask = (row1 | row2) << (8 - pt);
@@ -302,19 +352,6 @@ bool nextPixels(Screen *screen, const bool draw) {
             screen->IO[0x44] = (y == 153 && x == 1) ? 0 : y;
 
         if (y < 144) {
-            if (x == 21) {
-                const bool windowEnabled = screen->IO[0x40] & 0x20 && y >= screen->IO[0x4A] && y < screen->IO[0x4A] + 144 && screen->IO[0x4B] < 167;
-                if (y == 0) screen->wy = 0;
-                if (windowEnabled) screen->wy++;
-                screen->IO[0x41] = (screen->IO[0x41] & 0xFC) | 0x3;
-
-                if (y == 0) {
-                    while (inportb(0x3DA) & 0x8);
-                    if (draw) updatePalette(screen);
-                    while (!(inportb(0x3DA) & 0x8));
-                }
-            }
-
             if (x == 1) {
                 if (screen->IO[0x41] & 0x20) screen->IO[0x0F] |= 0x2;
                 screen->IO[0x41] = (screen->IO[0x41] & 0xFC) | 0x2;
@@ -325,6 +362,17 @@ bool nextPixels(Screen *screen, const bool draw) {
                 incrTimers(screen, 19);
                 screen->delay = 1;
             } else if (x >= 21 && x < 61) {
+                if (x == 21) {
+                    if (y == 0) {
+                        screen->wy = 0;
+                        while (!(inportb(0x3DA) & 0x8));
+                        if (draw) updatePalette(screen);
+                        while (inportb(0x3DA) & 0x8);
+                    }
+                    const bool windowEnabled = screen->IO[0x40] & 0x20 && y >= screen->IO[0x4A] && y < screen->IO[0x4A] + 144 && screen->IO[0x4B] < 167;
+                    if (windowEnabled) screen->wy++;
+                    screen->IO[0x41] = (screen->IO[0x41] & 0xFC) | 0x3;
+                }
                 incrTimers(screen, x == 61 - screen->pixelBatch / 4 ? 2 + screen->pixelBatch / 4 + screen->delay : screen->pixelBatch / 4 - 1);
             } else if (x == 64 + screen->delay) {
                 if (screen->IO[0x41] & 0x8) screen->IO[0x0F] |= 0x2;

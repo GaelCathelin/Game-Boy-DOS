@@ -1,7 +1,7 @@
 EXE = dos32\gameboy.exe
 CC = gcc
-CFLAGS = -Ofast -s -DNDEBUG -Wdisabled-optimization --param max-gcse-memory=268435456 -flto
-LDFLAGS = -s -Ofast -flto
+CFLAGS = -Ofast -s -DNDEBUG
+LDFLAGS = -Ofast -s
 SRC = $(wildcard *.c)
 OBJ = $(SRC:.c=.o)
 
@@ -9,7 +9,7 @@ $(EXE): $(OBJ)
 	$(CC) $^ -o $@ $(LDFLAGS)
 
 %.o: %.c
-	$(CC) -o $@ -c $< $(CFLAGS)
+	$(CC) $< -o $@ -c $(CFLAGS)
 
 clean:
 	@del *.o

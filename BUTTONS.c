@@ -39,15 +39,15 @@ void deleteKeyboard(Keyboard *keyb) {
     _go32_dpmi_free_iret_wrapper(&myHandler);
 }
 
-static uint8_t buttonPressedMasks[2] = {0xFF, 0xFF};
+static uint8_t buttonPressedMasks[2] = {0x3F, 0x3F};
 
 bool processEvents(bool channels[4], bool *bgViewer, bool *loudness) {
-    buttonPressedMasks[0] = 0xF0 |
+    buttonPressedMasks[0] = 0x30 |
         (keyPressed[0x2D] ? 0 : 0x1) | // A (X)
         (keyPressed[0x2E] ? 0 : 0x2) | // B (C)
         (keyPressed[0x39] ? 0 : 0x4) | // Select (Space)
         (keyPressed[0x36] ? 0 : 0x8);  // Start (Right Shift)
-    buttonPressedMasks[1] = 0xF0 |
+    buttonPressedMasks[1] = 0x30 |
         (keyPressed[0x4D] ? 0 : 0x1) | // Right
         (keyPressed[0x4B] ? 0 : 0x2) | // Left
         (keyPressed[0x48] ? 0 : 0x4) | // Up
@@ -58,8 +58,15 @@ bool processEvents(bool channels[4], bool *bgViewer, bool *loudness) {
         if (keyPressed[0x3F + i]) channels[i] = false;
     }
 
-    if (keyPressed[0x43]) *loudness = !*loudness;
-    if (keyPressed[0x44]) *bgViewer = !*bgViewer;
+    if (keyPressed[0x43]) {
+        keyPressed[0x43] = false;
+        *loudness = !*loudness;
+    }
+
+    if (keyPressed[0x44]) {
+        keyPressed[0x44] = false;
+        *bgViewer = !*bgViewer;
+    }
 
     return keyPressed[0x01];
 }
@@ -68,6 +75,6 @@ uint8_t updateInputReg(const uint8_t value) {
     switch (value & 0x30) {
         case 0x10: return buttonPressedMasks[0];
         case 0x20: return buttonPressedMasks[1];
-        default: return 0xFF;
+        default: return 0x3F;
     }
 }

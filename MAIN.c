@@ -52,15 +52,15 @@ int main(int argc, char *argv[]) {
             case 'h': if (argv[i][2] >= '0' && argv[i][2] <= '9') { hackLevel = argv[i][2] - '0'; break; } FALLTHROUGH;
             case '?': FALLTHROUGH;
             case '-': puts(
-                "Game Boy emulator for DOS, by Gael Cathelin (C) 2023\n\n"
-                "GAMEBOY romfile [/boot] [/pcspeaker | /tandy | /adlib] [/sn] [/hn]\n\n"
+                "Game Boy emulator for DOS, by Gael Cathelin (C) 2025\n\n"
+                "GAMEBOY romfile [/boot] [/pcspeaker | /tandy | /adlib] [/s<n>] [/h<n>]\n\n"
                 "romfile\t\tPath of the ROM to execute. Defaults to embedded Tetris game.\n"
                 "\t\tOnly no-MBC, MBC1, MBC2 and MBC5 cartridges are supported.\n"
                 "/boot\t\tRun the DMG-01 boot sequence.\n"
                 "/pcspeaker\tUse the PC Speaker for sound.\n"
                 "/tandy\t\tUse the Tandy/PCjr 3 voice system on port C0h for sound.\n"
                 "/adlib\t\tUse the Adlib/Sound Blaster FM synth for sound (default).\n"
-                "/sn\t\tSkip n frame(s) after every displayed frame (default: 0).\n"
+                "/s<n>\t\tSkip n frame(s) after every displayed frame (default: 0).\n"
                 "/h0\t\tHack level 0. Slower and more accurate emulation. CPU and\n"
                 "\t\tscreen are emulated at 8 pixels granularity, required for some\n"
                 "\t\trare special effects (e.g. wobble).\n"

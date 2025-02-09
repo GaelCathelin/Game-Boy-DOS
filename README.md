@@ -59,7 +59,7 @@ A Makefile is provided to be used with [DJGPP 2](https://www.delorie.com/djgpp/)
 |-|---------|-------------|
 | CPU | 386SX | Pentium |
 | RAM | 4MB | 8MB |
-| Video | EGA | VGA |
+| Video | VGA | VGA |
 | Sound | - | Adlib/Sound Blaster |
 
 
@@ -76,4 +76,4 @@ F9      : Change colors<br>
 Esc     : Quit
 
 ______________________
-Gael Cathelin (C) 2023
+Gael Cathelin (C) 2025

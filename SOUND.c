@@ -139,7 +139,7 @@ static void setSquare(const uint8_t channel, const uint8_t freqMul) {
 
 static void setBass(const uint8_t channel) {
     setChannelOperators(channel, 0x20, 1, 1); // frequency factor
-    setChannelOperator0(channel, 0x40, 0x9C); // 0xC0: KSL, 0x3F: attenuation
+    setChannelOperator0(channel, 0x40, 0x9A); // 0xC0: KSL, 0x3F: attenuation
 }
 
 static void setNoise(const uint8_t channel) {

@@ -25,7 +25,7 @@ static const struct {
 Memory* initMemory(const char *path, const uint8_t hackLevel) {
     Memory *mem = calloc(1, sizeof(Memory));
     mem->currROMBank = 1;
-    mem->IO[0] = 0xFF;
+    mem->IO[0] = 0x3F;
     memset(&mem->IO[0x4C], 0xFF, sizeof(mem->IO) - 0x4C);
     mem->IO[0x50] = 0;
 
