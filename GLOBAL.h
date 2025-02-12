@@ -12,7 +12,6 @@
 #define ARRAY_SIZE(array) (sizeof(array) / sizeof(*array))
 #define LIKELY(cond) __builtin_expect(!!(cond), 1)
 #define UNLIKELY(cond) __builtin_expect(!!(cond), 0)
-#define VERBATIM __attribute__((optimize(0)))
 #define SWAP(a, b) {__typeof__(a) c = a; a = b; b = c;}
 
 #define FPS 60

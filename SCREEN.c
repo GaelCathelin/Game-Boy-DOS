@@ -3,7 +3,6 @@
 #include <pc.h>
 #include <string.h>
 #include <sys/nearptr.h>
-#include <stdio.h>
 
 #ifdef DEBUG
     #define inline __attribute__((noinline))
@@ -284,7 +283,7 @@ static inline void drawPixels(Screen *screen, const uint8_t x, const uint8_t y, 
 
         for (int8_t i = screen->visibleSprites - 1; i >= 0; i--) {
             const Sprite s = screen->sprites[i];
-            if (s.x == 0 || s.x >= 168)
+            if (s.x <= x || s.x > x + screen->pixelBatch + 8)
                 continue;
 
             const uint8_t spriteId = bigSprites ? (s.tile & 0xFE) : s.tile;

@@ -5,8 +5,8 @@
 typedef struct {
 } Keyboard;
 
-Keyboard VERBATIM initKeyboard();
-void VERBATIM deleteKeyboard(Keyboard *keyb);
+Keyboard __attribute__((no_reorder)) initKeyboard();
+void deleteKeyboard(Keyboard *keyb);
 
 bool processEvents(bool channels[4], bool *bgViewer, bool *loudness);
 uint8_t updateInputReg(const uint8_t value);

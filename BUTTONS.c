@@ -10,7 +10,7 @@
 
 static bool keyPressed[0x60] = {};
 
-static VERBATIM void keybHandler() {
+static __attribute__((no_reorder)) void keybHandler() {
     const uint8_t keyCode = inportb(0x60);
     if (keyCode < 0xE0)
         keyPressed[keyCode & 0x7F] = (keyCode & 0x80) == 0;
@@ -18,7 +18,7 @@ static VERBATIM void keybHandler() {
     outportb(0x20, 0x20);
 }
 
-static _go32_dpmi_seginfo origHandler, myHandler;
+static __attribute__((no_reorder)) _go32_dpmi_seginfo origHandler, myHandler;
 
 Keyboard initKeyboard() {
     _go32_dpmi_get_protected_mode_interrupt_vector(0x9, &origHandler);
